@@ -1,0 +1,1 @@
+[![Manual pull and push](https://github.com/statditto/overleaf-textlint-template/actions/workflows/sync.yaml/badge.svg)](https://github.com/statditto/overleaf-textlint-template/actions/workflows/sync.yaml)
