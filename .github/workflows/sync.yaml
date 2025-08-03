@@ -1,33 +1,76 @@
-name: Manual pull and push
+# ワークフローの名前
+name: Sync with Overleaf
 
+# ワークフローの実行トリガー
 on:
+  # GitHubのUIから手動で実行できるようにする
   workflow_dispatch:
 
 jobs:
-  sync:
+  # 同期処理を行うジョブ
+  sync-overleaf-to-github:
     runs-on: ubuntu-latest
     permissions:
+      # リポジトリにコードをプッシュするために書き込み権限を付与
       contents: write
-      
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      # 1. リポジトリをチェックアウト
+      # --------------------------------------------------
+      # まず、このワークフローが動作しているリポジトリのコードにアクセスできるようにします。
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Pull from Overleaf
-      env:
-        OVERLEAF_TOKEN: ${{ secrets.OVERLEAF_TOKEN }}
-        OVERLEAF_PROJECT_ID: ${{ secrets.OVERLEAF_PROJECT_ID }}
-      run: |
-        git config user.name "${{ github.actor }}"
-        git config user.email "${{ github.actor }}@users.noreply.github.com"
-        
-        git fetch https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} master
-        git reset --hard FETCH_HEAD
+      # 2. Gitのコミットユーザーを設定
+      # --------------------------------------------------
+      # ワークフローがコミットを作成する際に使用する名前とメールアドレスを設定します。
+      # ここではアクションを実行したユーザー（${{ github.actor }}）の情報を使用します。
+      - name: Setup Git User
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-    - name: Push to GitHub
-      env:
-        TARGET_BRANCH: 'overleaf'
-      run: |
-        # プッシュ先のブランチが存在しない場合は作成します
-        git checkout -b $TARGET_BRANCH || true
-        git push origin $TARGET_BRANCH --force
+      # 3. Overleafプロジェクトを一時ディレクトリにクローン
+      # --------------------------------------------------
+      # Overleafのプロジェクトを、既存のリポジトリに影響を与えないよう、
+      # 'overleaf_temp' という名前の一時的なディレクトリにクローンします。
+      - name: Clone Overleaf project
+        env:
+          # GitHubのSecretsに設定したOverleafの認証情報を環境変数として使用します。
+          OVERLEAF_TOKEN: ${{ secrets.OVERLEAF_TOKEN }}
+          OVERLEAF_PROJECT_ID: ${{ secrets.OVERLEAF_PROJECT_ID }}
+        run: |
+          git clone https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} overleaf_temp
+
+      # 4. 'overleaf' ブランチに切り替え
+      # --------------------------------------------------
+      # 同期先の 'overleaf' ブランチに切り替えます。
+      # もしブランチが存在しない場合は、現在のブランチ（通常はmain）を元に新しく作成します。
+      - name: Switch to 'overleaf' branch
+        run: |
+          git switch overleaf || git switch -c overleaf
+
+      # 5. Overleafのファイルを './tex' ディレクトリに同期
+      # --------------------------------------------------
+      # rsyncコマンドを使い、'overleaf_temp' の内容を './tex' ディレクトリに同期します。
+      # --delete オプションにより、Overleaf側で削除されたファイルはGitHub側でも削除されます。
+      # --exclude '.git' で、Gitの管理ファイルを除外します。
+      - name: Sync files to ./tex directory
+        run: |
+          mkdir -p tex
+          rsync -a --delete --exclude='.git' overleaf_temp/ tex/
+
+      # 6. 変更をコミットしてプッシュ
+      # --------------------------------------------------
+      # ファイルに変更があった場合のみ、コミットを作成して 'overleaf' ブランチにプッシュします。
+      # 変更がない場合は、何もせずにジョブを完了します。
+      - name: Commit and push changes
+        run: |
+          git add tex/
+          if ! git diff --staged --quiet; then
+            git commit -m "docs(tex): Sync TeX files from Overleaf" -m "Synchronized at $(date -u)"
+            git push origin overleaf
+            echo "Successfully synced with Overleaf."
+          else
+            echo "No changes detected from Overleaf."
+          fi
