@@ -19,9 +19,12 @@ jobs:
         OVERLEAF_PROJECT_ID: ${{ secrets.OVERLEAF_PROJECT_ID }}
       run: |
         git config pull.rebase false
-        git pull --allow-unrelated-histories https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} master
+        git pull https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} master
 
-    - name: Push to GitHub overleaf branch
+    - name: Push to GitHub
+      env:
+        TARGET_BRANCH: 'overleaf'
       run: |
-        git checkout overleaf || git checkout -b overleaf
-        git push origin overleaf
+        # プッシュ先のブランチが存在しない場合は作成します
+        git checkout -b $TARGET_BRANCH || true
+        git push origin $TARGET_BRANCH
