@@ -30,4 +30,4 @@ jobs:
       run: |
         # プッシュ先のブランチが存在しない場合は作成します
         git checkout -b $TARGET_BRANCH || true
-        git push origin $TARGET_BRANCH
+        git push origin $TARGET_BRANCH --force
