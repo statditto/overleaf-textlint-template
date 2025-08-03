@@ -19,10 +19,10 @@ jobs:
         OVERLEAF_PROJECT_ID: ${{ secrets.OVERLEAF_PROJECT_ID }}
       run: |
         git config pull.rebase false
-        git pull https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} main
+        git pull https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} master
 
     - name: Push to GitHub overleaf branch
       run: |
         git checkout overleaf || git checkout -b overleaf
-        git merge main
+        git merge master
         git push origin overleaf
