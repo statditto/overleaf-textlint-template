@@ -2,7 +2,6 @@
 name: Lint TeX files
 
 # ワークフローの実行トリガー
-# pull_requestが作成または更新された時に実行
 on:
   pull_request:
 
@@ -12,36 +11,36 @@ jobs:
     name: runner / textlint
     runs-on: ubuntu-latest
 
-    # --- 修正点 1: 権限の付与 ---
-    # Pull Requestにチェック結果をコメントとして書き込むために、
-    # 明示的に権限を与える必要があります。
     permissions:
-      contents: read          # リポジトリのコンテンツを読み取る権限
-      pull-requests: write   # Pull Requestに書き込む（コメントする）権限
+      contents: read
+      pull-requests: write
 
     steps:
       # 1. リポジトリをチェックアウト
       - name: Checkout
-        uses: actions/checkout@v4 # バージョンをv4に更新
+        uses: actions/checkout@v4
 
       # 2. Node.jsの環境をセットアップ
       - name: Setup Node
-        uses: actions/setup-node@v4 # バージョンをv4に更新
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+      
+      # 3. 依存パッケージのインストール
+      # action-textlintが内部で 'npm ci' を実行するため、
+      # このステップは必須ではありませんが、明示的に記述しておくと挙動が分かりやすくなります。
+      - name: Install Dependencies
+        run: npm ci
 
-      # 3. textlintを実行し、PRにレビューコメントとして投稿
-      # --- 修正点 2: レポータを一本化し、トークン名を修正 ---
-      # 'github-check' と 'github-pr-review' の2回実行するのは非効率なため、
-      # PRへのレビューコメントを行う 'github-pr-review' に一本化します。
-      # また、トークンは `secrets.GITHUB_TOKEN`（大文字）が正しいです。
+      # 4. textlintを実行し、PRにレビューコメントとして投稿
       - name: Run textlint
         uses: tsuyoshicho/action-textlint@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review # PRのレビューとして結果を報告
-          # --- 修正点 3: lint対象を明確化 ---
-          # プロジェクト全体ではなく、'tex' ディレクトリ配下のみを対象にします。
-          # これにより、意図しないファイルまでlintしてしまうのを防ぎます。
+          reporter: github-pr-review
           textlint_flags: "tex/"
-
+          # --- ★最重要修正点 ---
+          # 'added' (追加された行のみ) から 'nofilter' (フィルターなし) に変更。
+          # これにより、tex/ ディレクトリ内のすべてのエラーが報告されるようになります。
+          filter_mode: nofilter
