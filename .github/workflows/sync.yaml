@@ -24,4 +24,4 @@ jobs:
     - name: Push to GitHub overleaf branch
       run: |
         git checkout overleaf || git checkout -b overleaf
-        git push origin overleaf
+        git push --allow-unrelated-histories origin overleaf
