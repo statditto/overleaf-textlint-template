@@ -1,0 +1,33 @@
+name: Manual pull and push
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Pull from Overleaf
+      env:
+        OVERLEAF_TOKEN: ${{ secrets.OVERLEAF_TOKEN }}
+        OVERLEAF_PROJECT_ID: ${{ secrets.OVERLEAF_PROJECT_ID }}
+      run: |
+        git config user.name "${{ github.actor }}"
+        git config user.email "${{ github.actor }}@users.noreply.github.com"
+        
+        git fetch https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} master
+        git reset --hard FETCH_HEAD
+
+    - name: Push to GitHub
+      env:
+        TARGET_BRANCH: 'overleaf'
+      run: |
+        # プッシュ先のブランチが存在しない場合は作成します
+        git checkout -b $TARGET_BRANCH || true
+        git push origin $TARGET_BRANCH --force

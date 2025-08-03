@@ -1,0 +1,24 @@
+{
+	"plugins": [
+		"latex2e"
+	],
+	"filters": {},
+	"rules": {
+		"preset-ja-technical-writing": {
+			"sentence-length": false,
+			"no-mix-dearu-desumasu": {
+				"preferInHeader": "",
+				"preferInBody": "である",
+				"preferInList": "である",
+				"strict": false
+			},
+			"ja-no-mixed-period": {
+				"periodMark": "．"
+			},
+			"max-kanji-continuous-len": {
+				"max": 8,
+				"allow": []
+			}
+		}
+	}
+}
