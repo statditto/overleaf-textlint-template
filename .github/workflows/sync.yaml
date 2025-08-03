@@ -21,8 +21,8 @@ jobs:
         git config user.name "${{ github.actor }}"
         git config user.email "${{ github.actor }}@users.noreply.github.com"
         
-        git config pull.rebase false
-        git pull https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} master --allow-unrelated-histories
+        git fetch https://git:${OVERLEAF_TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT_ID} master
+        git reset --hard FETCH_HEAD
 
     - name: Push to GitHub
       env:
