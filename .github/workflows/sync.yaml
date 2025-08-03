@@ -24,5 +24,4 @@ jobs:
     - name: Push to GitHub overleaf branch
       run: |
         git checkout overleaf || git checkout -b overleaf
-        git merge master
         git push origin overleaf
