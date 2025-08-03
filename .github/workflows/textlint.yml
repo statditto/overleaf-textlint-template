@@ -1,8 +1,5 @@
 name: tex-textlint
-on:
-  push:
-    branches:
-      - main
+on: [pull_request]
 jobs:
   textlint:
     name: runner / textlint
